@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div style="display:flex; align-items:center; justify-content:space-between; padding:50px;">
+
+    <!-- LEFT FORM -->
+    <div style="width:45%;">
+        <h1>Join Local Service Platform</h1>
+        <p>Manage services, bookings, and customers easily.</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" placeholder="Username" style="width:100%;padding:10px;margin:10px 0;">
+            <input type="email" placeholder="Email" style="width:100%;padding:10px;margin:10px 0;">
+            <input type="password" placeholder="Password" style="width:100%;padding:10px;margin:10px 0;">
+            <input type="password" placeholder="Confirm Password" style="width:100%;padding:10px;margin:10px 0;">
+
+            <button type="submit" style="width:100%;padding:12px;background:#28a745;color:white;border:none;">
+                Create Account
+            </button>
+        </form>
+    </div>
+
+    <!-- RIGHT IMAGE -->
+    <div style="width:45%;">
+        <img src="{% static 'images/worker.png' %}" width="100%">
+    </div>
+
+</div>
+
+{% endblock %}
