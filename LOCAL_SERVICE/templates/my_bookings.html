@@ -1,0 +1,36 @@
+<h2>My Bookings</h2>
+
+<table border="1">
+
+<tr>
+<th>Service</th>
+<th>Date</th>
+<th>Time</th>
+<th>Status</th>
+<th>Action</th>  <!-- 🔥 new column -->
+</tr>
+
+{% for booking in bookings %}
+
+<tr>
+
+<td>{{ booking.service }}</td>
+<td>{{ booking.booking_date }}</td>
+<td>{{ booking.time_slot }}</td>
+<td>{{ booking.status }}</td>
+
+<td>
+    {% if booking.status != "Paid" %}
+        <a href="{% url 'make_payment' booking.id %}" class="btn btn-success">
+            Pay Now
+        </a>
+    {% else %}
+        ✅ Paid
+    {% endif %}
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>

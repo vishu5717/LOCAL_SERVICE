@@ -1,0 +1,22 @@
+<h2>Add Review</h2>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<label>Rating</label>
+
+<select name="rating">
+<option>1</option>
+<option>2</option>
+<option>3</option>
+<option>4</option>
+<option>5</option>
+</select>
+
+<label>Comment</label>
+<textarea name="comment"></textarea>
+
+<button type="submit">Submit</button>
+
+</form>

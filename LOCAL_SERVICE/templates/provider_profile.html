@@ -1,0 +1,19 @@
+<h2>{{provider.name}}</h2>
+
+<p>Location : {{provider.location}}</p>
+
+<p>Experience : {{provider.experience}} years</p>
+
+<h3>Services</h3>
+
+{% for service in services %}
+
+<p>
+
+{{service.service_name}} - ₹{{service.price}}
+
+<a href="/core/book/{{service.id}}/">Book</a>
+
+</p>
+
+{% endfor %}

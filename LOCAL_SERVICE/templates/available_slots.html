@@ -1,0 +1,12 @@
+<h2>Available Slots</h2>
+
+{% for slot in slots %}
+
+<p>
+
+Date : {{slot.date}}  
+Time : {{slot.start_time}} - {{slot.end_time}}
+
+</p>
+
+{% endfor %}

@@ -36,13 +36,7 @@
     <script src="https://kit.fontawesome.com/yourkit.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    {% comment %} //check rol for navbar... {% endcomment %}
-    {% if request.user.role == 'owner' %}
-        {% include 'parking/owner/ownersiderbar.html' %}
-    {% elif request.user.role == 'user' %}
-        {% include 'parking/user/usernavbar.html' %}
-    {% endif %}
-
+   
 <!-- ================= NAVBAR ================= -->
        
 <!-- ================= MESSAGES ================= -->

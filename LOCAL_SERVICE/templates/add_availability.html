@@ -1,0 +1,18 @@
+<h2>Add Availability</h2>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<label>Date</label>
+<input type="date" name="date" required>
+
+<label>Start Time</label>
+<input type="time" name="start_time" required>
+
+<label>End Time</label>
+<input type="time" name="end_time" required>
+
+<button type="submit">Save Availability</button>
+
+</form>

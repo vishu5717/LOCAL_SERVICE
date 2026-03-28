@@ -1,0 +1,25 @@
+<h2>Search Services</h2>
+
+<form method="GET">
+
+<input type="text" name="q" placeholder="Service">
+
+<input type="text" name="location" placeholder="Location">
+
+<button type="submit">Search</button>
+
+</form>
+
+<hr>
+
+{% for service in services %}
+
+<p>
+
+{{service.service_name}}  
+₹{{service.price}}  
+Provider : {{service.provider.name}}
+
+</p>
+
+{% endfor %}

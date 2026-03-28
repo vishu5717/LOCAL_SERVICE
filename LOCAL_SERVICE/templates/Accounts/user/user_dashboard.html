@@ -1,6 +1,232 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 {% block content %}
-<h1>USER DASHBOARD</h1>
-{{request.user.role}}
-<p>{{request.user}}</p>
-{% endblock content %}
+
+<div class="container-fluid">
+
+<div class="row">
+
+<!-- SIDEBAR -->
+<div class="col-md-3 bg-dark text-white min-vh-100 p-4">
+
+<h4 class="mb-4">👤 {{ request.user.first_name }}</h4>
+
+<ul class="nav flex-column">
+
+<li class="nav-item mb-2">
+<a href="{% url 'user_dashboard' %}" class="nav-link text-white">
+🏠 Dashboard
+</a>
+</li>
+
+<li class="nav-item mb-2">
+<a href="{% url 'services' %}" class="nav-link text-white">
+🛠 Browse Services
+</a>
+</li>
+
+<li class="nav-item mb-2">
+<a href="{% url 'my_bookings' %}" class="nav-link text-white">
+📅 My Bookings
+</a>
+</li>
+
+<li class="nav-item mb-2">
+<a href="#" class="nav-link text-white">
+⭐ My Reviews
+</a>
+</li>
+
+<li class="nav-item mb-2">
+<a href="#" class="nav-link text-white">
+⚙ Profile Settings
+</a>
+</li>
+
+<li class="nav-item mt-4">
+<a href="{% url 'logout' %}" class="btn btn-danger w-100">
+Logout
+</a>
+</li>
+
+</ul>
+
+</div>
+
+
+<!-- MAIN CONTENT -->
+<div class="col-md-9 p-4">
+
+<h2 class="mb-4">Welcome, {{ request.user.first_name }} 👋</h2>
+
+<!-- DASHBOARD CARDS -->
+<div class="row mb-4">
+
+<div class="col-md-4">
+<div class="card shadow">
+<div class="card-body text-center">
+<h5>Total Bookings</h5>
+<h3>{{ total_bookings }}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card shadow">
+<div class="card-body text-center">
+<h5>Completed Services</h5>
+<h3>{{ completed_services }}</h3>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card shadow">
+<div class="card-body text-center">
+<h5>Pending Requests</h5>
+<h3>{{ pending_services }}</h3>
+</div>
+</div>
+</div>
+
+</div>
+
+
+<!-- SEARCH SERVICES -->
+<div class="card shadow mb-4">
+<div class="card-body">
+
+<h5 class="mb-3">🔎 Search Services</h5>
+
+<form method="GET" action="{% url 'services' %}">
+
+<div class="input-group">
+
+<input type="text"
+name="q"
+class="form-control"
+placeholder="Search plumber, electrician, cleaning...">
+
+<button class="btn btn-primary">
+Search
+</button>
+
+</div>
+
+</form>
+
+</div>
+</div>
+
+
+<!-- SERVICE CATEGORIES -->
+<h4 class="mb-3">Popular Services</h4>
+
+<div class="row">
+
+<div class="col-md-3 mb-3">
+<div class="card text-center shadow">
+<div class="card-body">
+<h5>⚡ Electrician</h5>
+<a href="{% url 'services' %}" class="btn btn-sm btn-primary mt-2">
+View
+</a>
+</div>
+</div>
+</div>
+
+<div class="col-md-3 mb-3">
+<div class="card text-center shadow">
+<div class="card-body">
+<h5>🚿 Plumber</h5>
+<a href="{% url 'services' %}" class="btn btn-sm btn-primary mt-2">
+View
+</a>
+</div>
+</div>
+</div>
+
+<div class="col-md-3 mb-3">
+<div class="card text-center shadow">
+<div class="card-body">
+<h5>🧹 Cleaning</h5>
+<a href="{% url 'services' %}" class="btn btn-sm btn-primary mt-2">
+View
+</a>
+</div>
+</div>
+</div>
+
+<div class="col-md-3 mb-3">
+<div class="card text-center shadow">
+<div class="card-body">
+<h5>❄ AC Repair</h5>
+<a href="{% url 'services' %}" class="btn btn-sm btn-primary mt-2">
+View
+</a>
+</div>
+</div>
+</div>
+
+</div>
+
+
+<!-- RECENT BOOKINGS -->
+<div class="card shadow mt-4">
+
+<div class="card-body">
+
+<h5 class="mb-3">📋 Recent Bookings</h5>
+
+<table class="table">
+
+<thead>
+<tr>
+<th>Service</th>
+<th>Date</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for booking in bookings %}
+
+<tr>
+
+<td>{{ booking.service.name }}</td>
+<td>{{ booking.date }}</td>
+
+<td>
+
+{% if booking.status == "pending" %}
+<span class="badge bg-warning">Pending</span>
+
+{% elif booking.status == "completed" %}
+<span class="badge bg-success">Completed</span>
+
+{% else %}
+<span class="badge bg-info">Accepted</span>
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

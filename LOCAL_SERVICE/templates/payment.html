@@ -1,0 +1,23 @@
+<h2>💳 Payment</h2>
+
+<p><b>Service:</b> {{ booking.service }}</p>
+<p><b>Amount:</b> ₹{{ booking.service.price }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label><b>Select Payment Method:</b></label><br><br>
+
+    <select name="payment_method" required>
+        <option value="">-- Select --</option>
+        <option value="CASH">Cash</option>
+        <option value="CARD">Card</option>
+        <option value="UPI">UPI</option>
+        <option value="NET">Net Banking</option>
+        <option value="WALLET">Wallet</option>
+    </select>
+
+    <br><br>
+
+    <button type="submit">💳 Pay Now</button>
+</form>

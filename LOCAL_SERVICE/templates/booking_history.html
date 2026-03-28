@@ -1,0 +1,17 @@
+<h2>My Bookings</h2>
+
+{% for booking in bookings %}
+
+<p>
+
+Service : {{booking.service}}
+
+Date : {{booking.booking_date}}
+
+Time : {{booking.booking_time}}
+
+Status : {{booking.status}}
+
+</p>
+
+{% endfor %}
