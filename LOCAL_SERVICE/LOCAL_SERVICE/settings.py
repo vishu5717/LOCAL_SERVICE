@@ -132,7 +132,7 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'Accounts.User'
 
 # 🔽 AA LINE ADD KARO
 LOGIN_URL = '/login/'
@@ -147,5 +147,5 @@ EMAIL_HOST_USER = 'vishvapatel17325@gmail.com'
 EMAIL_HOST_PASSWORD = 'lqgoisyuviywuhnr' #app password
 
 AUTHENTICATION_BACKENDS = [
-    'core.backends.EmailBackend',
+    'Accounts.backends.EmailBackend',
 ]

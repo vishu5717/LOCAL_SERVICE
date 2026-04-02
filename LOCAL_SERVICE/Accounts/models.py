@@ -1,43 +1,45 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser , BaseUserManager
 from django.utils import timezone
 
 class UserManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError("Email must be provided")
+            raise ValueError("Email required")
 
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)  # VERY IMPORTANT
+        user.set_password(password)
         user.save(using=self._db)
         return user
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_admin', True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_admin') is not True:
-            raise ValueError('Superuser must have is_admin=True.')
+    def create_superuser(self, email, password=None, **extra_fields):  # ❗ no username
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
 
         return self.create_user(email, password, **extra_fields)
 
-class User(models.Model):
-    name = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone = models.CharField(max_length=10)
-    password = models.CharField(max_length=100)
+
+
+class User(AbstractUser):
+    username = None  # username remove
+
+    email = models.EmailField(unique=True)
+    mobile_number = models.CharField(max_length=10,null=True)
     address = models.TextField()
-    
 
-    created_at = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        db_table = "User"
+    role = models.CharField(null=True,max_length=20, choices=[
+        ('provider', 'Provider'),
+        ('customer', 'Customer')
+    ])
+    gender = models.CharField(null=True,choices=[('male','male'),('female','female')])
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    objects = UserManager() 
 
     def __str__(self):
-        return self.name
+        return self.email
 
 
 class ServiceProvider(models.Model):
@@ -90,7 +92,7 @@ class Service(models.Model):
         provider_id = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, null=True)
 
         image = models.ImageField(upload_to="services/", null=True, blank=True)
-
+        city = models.CharField(max_length=100, null=True)
         class Meta:
             db_table = "Service"
 
@@ -103,11 +105,21 @@ class Booking(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
     provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE,null=True)
     service = models.ForeignKey(Service, on_delete=models.CASCADE,null=True)
-
+    phone = models.CharField(max_length=15, null=True)
     booking_date = models.DateField()
     time_slot = models.TimeField()
 
-    booking_status = models.BooleanField(default=False)
+    STATUS_CHOICES = (
+    ('Pending', 'Pending'),
+    ('Confirmed', 'Confirmed'),
+    ('Completed', 'Completed'),
+    ('Cancelled', 'Cancelled'),
+    )
+
+    booking_status = models.CharField(
+    max_length=20,
+    choices=STATUS_CHOICES,
+    default='Pending',null=True)
 
     address = models.TextField(null=True, blank=True)
 
@@ -125,11 +137,20 @@ class Review(models.Model):
 
     service = models.ForeignKey(Service, on_delete=models.CASCADE,null=True)
 
-    rating = models.IntegerField()
+    rating = models.IntegerField(choices=[
+        (1, '1 Star'),
+        (2, '2 Star'),
+        (3, '3 Star'),
+        (4, '4 Star'),
+        (5, '5 Star'),
+    ])
 
     comment = models.TextField()
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'service']
 
     def __str__(self):
         return str(self.user)
@@ -149,7 +170,14 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
 
-    payment_status = models.CharField(max_length=20)
+    payment_status = models.CharField(
+    max_length=20,
+    choices=[
+        ('Pending', 'Pending'),
+        ('Paid', 'Paid'),
+    ],
+    default='Pending'
+    )
     transaction_id = models.CharField(max_length=100)
 
 

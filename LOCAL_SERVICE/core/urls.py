@@ -15,6 +15,7 @@ urlpatterns = [
     
     
 
+
     path("accept/<int:id>/",views.acceptBooking,name="accept_booking"),
 
     path("reject/<int:id>/",views.rejectBooking,name="reject_booking"),
@@ -22,10 +23,13 @@ urlpatterns = [
     path("search/",views.searchService,name="search"),
 
     path('provider/<int:id>/',views.providerProfile,name="provider_profile"),
-    path('book/<int:service_id>/', views.bookService, name='book_service'),
-
+    
+    
+    path('book/<int:id>/', views.book_detail, name='book_detail'),
+    path('cancel-booking/<int:id>/', views.cancel_booking, name='cancel_booking'),
     path('history/',views.bookingHistory,name="booking_history"),
-
+    
+    path('get-slots/', views.get_slots_by_date, name='get_slots'),
     path("my-bookings/",views.myBookings,name="my_bookings"),
 
     path("add-service/",views.addService,name="add_service"),

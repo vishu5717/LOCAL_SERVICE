@@ -6,18 +6,11 @@
 <title>Customer Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Bootstrap -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-<!-- Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 
 <style>
-
-/* Background like login */
 body {
     font-family: 'Poppins', sans-serif;
     margin:0;
@@ -25,7 +18,6 @@ body {
     background: linear-gradient(135deg, #4f46e5, #6366f1);
     min-height:100vh;
 }
-
 body::before {
     content:"";
     position:fixed;
@@ -34,83 +26,37 @@ body::before {
     background:rgba(0,0,0,0.6);
     z-index:-1;
 }
-
-/* Sidebar */
 .sidebar {
     width:240px;
     height:100vh;
     position:fixed;
     background:rgba(255,255,255,0.1);
     backdrop-filter:blur(15px);
-    border-right:1px solid rgba(255,255,255,0.2);
     padding-top:20px;
 }
-
-.sidebar h4 {
-    color:white;
-    text-align:center;
-    margin-bottom:30px;
-}
-
+.sidebar h4 { color:white; text-align:center; }
 .sidebar a {
     color:white;
     padding:12px 20px;
     display:block;
     text-decoration:none;
-    transition:0.3s;
 }
-
 .sidebar a:hover {
     background:rgba(255,255,255,0.2);
     border-radius:8px;
 }
-
-/* Content */
-.content {
-    margin-left:250px;
-    padding:20px;
-}
-
-/* Topbar */
+.content { margin-left:250px; padding:20px; }
 .topbar {
-    background:rgba(255,255,255,0.9);
+    background:white;
     padding:12px 20px;
     border-radius:12px;
 }
-
-/* Cards */
 .card {
-    background:rgba(255,255,255,0.95);
     border-radius:15px;
     border:none;
     box-shadow:0 10px 25px rgba(0,0,0,0.2);
 }
-
-/* Table */
-.table thead {
-    background:linear-gradient(90deg,#4f46e5,#6366f1);
-    color:white;
-}
-
-/* Buttons */
-.btn-primary {
-    background:linear-gradient(90deg,#4f46e5,#6366f1);
-    border:none;
-}
-
-.btn-danger {
-    background:linear-gradient(90deg,#dc3545,#ef4444);
-    border:none;
-}
-
-/* Hover */
-.card:hover {
-    transform:translateY(-3px);
-    transition:0.3s;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -118,35 +64,22 @@ body::before {
 <!-- Sidebar -->
 <div class="sidebar">
     <h4>🏠 Local Service</h4>
-
-    <a href="#"><i class="bi bi-house"></i> Dashboard</a>
-    <a href="#"><i class="bi bi-tools"></i> Services</a>
-    <a href="#"><i class="bi bi-box"></i> Bookings</a>
-    <a href="#"><i class="bi bi-person"></i> Profile</a>
-    <a href="/core/logout/"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    <a href="#">Dashboard</a>
+    <a href="#">Services</a>
+    <a href="#">Bookings</a>
+    <a href="#">Profile</a>
+    <a href="{% url 'logout' %}">Logout</a>
 </div>
 
-<!-- Content -->
 <div class="content">
 
-<!-- Topbar -->
-<div class="topbar d-flex justify-content-between align-items-center mb-3">
+<div class="topbar d-flex justify-content-between">
     <h5>Dashboard</h5>
-    <div>
-        🔔 <span class="badge bg-danger">3</span>
-        <b>{{request.user.email}}</b>
-    </div>
-</div>
-
-<!-- Welcome -->
-<div class="card p-3 mb-3 text-white"
-     style="background: linear-gradient(90deg,#4f46e5,#6366f1);">
-    <h5>Welcome back 👋</h5>
-    <p>{{request.user.email}}</p>
+    <b>{{request.user.email}}</b>
 </div>
 
 <!-- Stats -->
-<div class="row text-center mb-4">
+<div class="row text-center my-3">
 
     <div class="col-md-4">
         <div class="card p-3">
@@ -166,23 +99,18 @@ body::before {
         <div class="card p-3">
             <h6>Pending</h6>
             <h3>
-                {% for b in bookings %}
-                    {% if not b.booking_status %}1{% endif %}
-                {% endfor %}
+                {{ bookings|dictsort:"booking_status"|length }}
             </h3>
         </div>
     </div>
 
 </div>
 
-<!-- Search -->
-<input type="text" id="searchInput" class="form-control mb-3" placeholder="Search services...">
-
 <!-- Services -->
 <div class="card p-4">
     <h5>Available Services</h5>
 
-    <table class="table table-hover mt-3" id="serviceTable">
+    <table class="table mt-3">
         <thead>
             <tr>
                 <th>Service</th>
@@ -197,8 +125,8 @@ body::before {
                 <td>{{service.service_name}}</td>
                 <td>₹ {{service.price}}</td>
                 <td>
-                    <a href="/book/{{service.id}}/" class="btn btn-primary btn-sm">
-                        Book
+                    <a href="{% url 'book_detail' service.id %}" class="btn btn-primary btn-sm">
+                        View
                     </a>
                 </td>
             </tr>
@@ -211,7 +139,7 @@ body::before {
 <div class="card p-4 mt-4">
     <h5>My Bookings</h5>
 
-    <table class="table table-hover mt-3">
+    <table class="table mt-3">
         <thead>
             <tr>
                 <th>Service</th>
@@ -231,13 +159,13 @@ body::before {
                     {% if booking.booking_status %}
                         <span class="badge bg-success">Completed</span>
                     {% else %}
-                        <span class="badge bg-warning text-dark">Pending</span>
+                        <span class="badge bg-warning">Pending</span>
                     {% endif %}
                 </td>
 
                 <td>
                     {% if not booking.booking_status %}
-                        <a href="/cancel-booking/{{booking.id}}/" class="btn btn-danger btn-sm">
+                        <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-danger btn-sm">
                             Cancel
                         </a>
                     {% else %}
@@ -252,18 +180,5 @@ body::before {
 </div>
 
 </div>
-
-<!-- Search Script -->
-<script>
-document.getElementById("searchInput").addEventListener("keyup", function() {
-    let value = this.value.toLowerCase();
-    let rows = document.querySelectorAll("#serviceTable tbody tr");
-
-    rows.forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
-    });
-});
-</script>
-
 </body>
 </html>

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect ,HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from .forms import UserSignupForm, UserLoginForm
 from django.contrib.auth.decorators import login_required
@@ -8,6 +8,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .decorators import role_required
 from django.contrib import messages
+from django.shortcuts import get_object_or_404
+from datetime import date ,datetime
+from django.http import JsonResponse
 
 
 # User Signup View
@@ -115,46 +118,6 @@ def providerDashboard(request):
 
     return render(request, "core/provider_dashboard.html", context)
 
-@login_required
-def bookService(request,service_id):
-
-    service = Service.objects.get(id=service_id)
-
-    if request.method == "POST":
-
-        date = request.POST['date']
-        time = request.POST['time']
-
-        slot = Availability.objects.filter(
-            provider=service.provider,
-            date=date,
-            start_time__lte=time,
-            end_time__gte=time,
-            is_available=True
-        ).first()
-
-        if slot:
-
-            Booking.objects.create(
-                user=request.user,
-                provider=service.provider,
-                service=service,
-                booking_date=date,
-                time_slot=time
-            )
-
-            slot.is_available = False
-            slot.save()
-
-            return redirect("my_bookings")
-
-        else:
-
-            return render(request,"book_service.html",
-            {"error":"Selected time slot not available"})
-
-    return render(request,"book_service.html")
-
 def bookingHistory(request):
     if request.user.is_authenticated:
         bookings = Booking.objects.filter(user=request.user)
@@ -195,7 +158,7 @@ def searchService(request):
         services = services.filter(service_name__icontains=query)
 
     if location:
-        services = services.filter(provider__location__icontains=location)
+        services = services.filter(provider_id__location__icontains=location)
 
     return render(request,"search.html",{"services":services})
 
@@ -203,7 +166,7 @@ def providerProfile(request,id):
 
     provider = ServiceProvider.objects.get(id=id)
 
-    services = Service.objects.filter(provider=provider)
+    services = Service.objects.filter(provider_id=provider)
 
     return render(request,"provider_profile.html",
     {"provider":provider,"services":services})
@@ -227,13 +190,11 @@ def addService(request):
         price = request.POST['price']
 
         Service.objects.create(
-
-            service_name=name,
-            description=description,
-            price=price,
-            provider=provider
-
-        )
+         service_name=name,
+         service_description=description,
+         price_range=price,
+         provider_id=provider
+)
 
         return redirect("provider_dashboard")
 
@@ -269,7 +230,7 @@ def makePayment(request, booking_id):
 
         Payment.objects.create(
             booking = booking,
-            amount = booking.service.price,
+            amount = booking.service.price_range,
             payment_method = method,
             payment_status = "Paid",
             transaction_id = str(uuid.uuid4())
@@ -323,3 +284,100 @@ def availableSlots(request,provider_id):
     )
 
     return render(request,"available_slots.html",{"slots":slots})
+
+@login_required
+def book_detail(request, id):
+
+    service = get_object_or_404(Service, id=id)
+
+    if request.method == "POST":
+
+        selected_date = request.POST.get('date')
+        selected_time = request.POST.get('time')
+
+        # ❌ Validation
+        if not selected_date or not selected_time:
+            messages.error(request, "Please select date & time ❌")
+            return redirect(request.path)
+
+        try:
+            selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            selected_time = datetime.strptime(selected_time, "%H:%M").time()
+        except:
+            messages.error(request, "Invalid date/time format ❌")
+            return redirect(request.path)
+
+        # ❌ Past date block
+        if selected_date < date.today():
+            messages.error(request, "You cannot book past date ❌")
+            return redirect(request.path)
+
+        # 🔍 Find slot
+        slot = Availability.objects.filter(
+            provider=service.provider_id,
+            date=selected_date,
+            start_time=selected_time,
+            is_available=True
+        ).first()
+
+        if slot:
+
+            Booking.objects.create(
+                user=request.user,
+                provider=service.provider_id,
+                service=service,
+                booking_date=selected_date,
+                time_slot=selected_time
+            )
+
+            # 🔒 Slot lock
+            slot.is_available = False
+            slot.save()
+
+            messages.success(request, "Booking successful 🎉")
+
+        else:
+            messages.error(request, "Slot already booked ❌")
+
+        return redirect(request.path)
+
+    return render(request, "service_detail.html", {
+        "service": service,
+        "today": date.today()
+    })
+
+
+# ✅ SLOT API
+def get_slots_by_date(request):
+
+    provider_id = request.GET.get('provider_id')
+    selected_date = request.GET.get('date')
+
+    try:
+        selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+    except:
+        return JsonResponse({"slots": []})
+
+    slots = Availability.objects.filter(
+        provider_id=provider_id,
+        date=selected_date,
+        is_available=True
+    ).order_by("start_time")
+
+    data = []
+
+    for slot in slots:
+        data.append({
+            "start": slot.start_time.strftime("%H:%M"),
+            "display": slot.start_time.strftime("%I:%M %p")
+        })
+
+    return JsonResponse({"slots": data})
+
+
+
+def cancel_booking(request, id):
+    booking = get_object_or_404(Booking, id=id)
+    booking.delete()
+    return redirect('customer_dashboard')
+

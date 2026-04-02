@@ -16,8 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 
 <style>
-
-/* Background (Same as Login) */
+/* Background */
 body {
     font-family: 'Poppins', sans-serif;
     margin:0;
@@ -25,7 +24,6 @@ body {
     background: linear-gradient(135deg, #4f46e5, #6366f1);
     min-height:100vh;
 }
-
 body::before {
     content:"";
     position:fixed;
@@ -45,13 +43,11 @@ body::before {
     border-right:1px solid rgba(255,255,255,0.2);
     padding-top:20px;
 }
-
 .sidebar h4 {
     color:white;
     text-align:center;
     margin-bottom:30px;
 }
-
 .sidebar a {
     color:white;
     padding:12px 20px;
@@ -59,7 +55,6 @@ body::before {
     text-decoration:none;
     transition:0.3s;
 }
-
 .sidebar a:hover {
     background:rgba(255,255,255,0.2);
     border-radius:8px;
@@ -97,7 +92,6 @@ body::before {
     background:linear-gradient(90deg,#16a34a,#22c55e);
     border:none;
 }
-
 .btn-danger {
     background:linear-gradient(90deg,#dc3545,#ef4444);
     border:none;
@@ -108,17 +102,14 @@ body::before {
     transform:translateY(-3px);
     transition:0.3s;
 }
-
 </style>
 
 </head>
-
 <body>
 
 <!-- Sidebar -->
 <div class="sidebar">
     <h4>🛠 Provider Panel</h4>
-
     <a href="#"><i class="bi bi-speedometer2"></i> Dashboard</a>
     <a href="#"><i class="bi bi-box"></i> Bookings</a>
     <a href="#"><i class="bi bi-person"></i> Profile</a>
@@ -133,24 +124,23 @@ body::before {
     <h5>Provider Dashboard</h5>
     <div>
         🔔 <span class="badge bg-danger">2</span>
-        <b>{{request.user.email}}</b>
+        <b>{{ request.user.email }}</b>
     </div>
 </div>
 
-<!-- Welcome -->
+<!-- Welcome Card -->
 <div class="card p-3 mb-3 text-white"
      style="background: linear-gradient(90deg,#4f46e5,#6366f1);">
     <h5>Welcome Provider 👋</h5>
-    <p>{{request.user.email}}</p>
+    <p>{{ request.user.email }}</p>
 </div>
 
-<!-- Stats -->
+<!-- Main Stats -->
 <div class="row text-center mb-4">
-
     <div class="col-md-4">
         <div class="card p-3">
             <h6>Total Bookings</h6>
-            <h3>{{bookings|length}}</h3>
+            <h3>{{ bookings|length }}</h3>
         </div>
     </div>
 
@@ -175,7 +165,18 @@ body::before {
             </h3>
         </div>
     </div>
+</div>
 
+<!-- Service-wise Bookings -->
+<div class="row text-center mb-4">
+    {% for service, count in service_counts.items %}
+    <div class="col-md-3 mb-2">
+        <div class="card p-3">
+            <h6>{{ service }}</h6>
+            <h3>{{ count }}</h3>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 
 <!-- Search -->
@@ -183,11 +184,8 @@ body::before {
 
 <!-- Bookings Table -->
 <div class="card p-4">
-
     <h5>Customer Bookings</h5>
-
     <table class="table table-hover mt-3" id="bookingTable">
-
         <thead>
             <tr>
                 <th>Customer</th>
@@ -198,17 +196,13 @@ body::before {
                 <th>Action</th>
             </tr>
         </thead>
-
         <tbody>
-
         {% for booking in bookings %}
-
         <tr>
-            <td>{{booking.user.email}}</td>
-            <td>{{booking.service.service_name}}</td>
-            <td>{{booking.booking_date}}</td>
-            <td>{{booking.time_slot}}</td>
-
+            <td>{{ booking.user.email }}</td>
+            <td>{{ booking.service.service_name }}</td>
+            <td>{{ booking.booking_date }}</td>
+            <td>{{ booking.time_slot }}</td>
             <td>
                 {% if booking.booking_status %}
                     <span class="badge bg-success">Accepted</span>
@@ -216,44 +210,25 @@ body::before {
                     <span class="badge bg-warning text-dark">Pending</span>
                 {% endif %}
             </td>
-
             <td>
-
                 {% if not booking.booking_status %}
-
-                <a href="/core/accept/{{booking.id}}/" 
-                   class="btn btn-success btn-sm">
-                    Accept
-                </a>
-
-                <a href="/core/reject/{{booking.id}}/" 
-                   class="btn btn-danger btn-sm">
-                    Reject
-                </a>
-
-                {% else %}
-                    -
-                {% endif %}
-
+                <a href="/core/accept/{{ booking.id }}/" class="btn btn-success btn-sm">Accept</a>
+                <a href="/core/reject/{{ booking.id }}/" class="btn btn-danger btn-sm">Reject</a>
+                {% else %}-{% endif %}
             </td>
         </tr>
-
         {% endfor %}
-
         </tbody>
-
     </table>
-
 </div>
 
-</div>
+</div> <!-- End content -->
 
 <!-- Search Script -->
 <script>
 document.getElementById("searchInput").addEventListener("keyup", function() {
     let value = this.value.toLowerCase();
     let rows = document.querySelectorAll("#bookingTable tbody tr");
-
     rows.forEach(row => {
         row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
     });
