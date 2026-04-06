@@ -29,8 +29,9 @@ urlpatterns = [
     path('cancel-booking/<int:id>/', views.cancel_booking, name='cancel_booking'),
     path('history/',views.bookingHistory,name="booking_history"),
     
-    path('get-slots/', views.get_slots_by_date, name='get_slots'),
+    
     path("my-bookings/",views.myBookings,name="my_bookings"),
+    path('get-slots/', views.get_slots_by_date, name='get_slots'),
 
     path("add-service/",views.addService,name="add_service"),
 

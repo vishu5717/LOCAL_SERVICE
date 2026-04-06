@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect ,HttpResponse
+from django.shortcuts import render, redirect ,HttpResponse ,get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from .forms import UserSignupForm, UserLoginForm
 from django.contrib.auth.decorators import login_required
@@ -8,9 +8,10 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .decorators import role_required
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
+from django.core.paginator import Paginator
 from datetime import date ,datetime
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
 
 # User Signup View
@@ -108,7 +109,7 @@ def customerDashboard(request):
 @role_required(allowed_roles=["provider"])
 def providerDashboard(request):
 
-    provider = ServiceProvider.objects.first()
+    provider = ServiceProvider.objects.get(user=request.user)
 
     services = Service.objects.filter(provider_id=provider)
 
@@ -171,13 +172,24 @@ def providerProfile(request,id):
     return render(request,"provider_profile.html",
     {"provider":provider,"services":services})
 
+
+
 @login_required
 def myBookings(request):
 
-    bookings = Booking.objects.filter(user=request.user)
+    bookings = Booking.objects.filter(user=request.user).order_by('-id')
 
-    return render(request,"my_bookings.html",{"bookings":bookings})
+    # 🔍 SEARCH
+    query = request.GET.get('q')
+    if query:
+        bookings = bookings.filter(service__service_name__icontains=query)
 
+    # 📄 PAGINATION
+    paginator = Paginator(bookings, 5)
+    page = request.GET.get('page')
+    bookings = paginator.get_page(page)
+
+    return render(request, "my_bookings.html", {"bookings": bookings})
 @login_required
 def addService(request):
 
@@ -222,7 +234,7 @@ def addReview(request, service_id):
 
 def makePayment(request, booking_id):
 
-    booking = Booking.objects.get(id=booking_id)
+    booking = get_object_or_404(Booking, id=id, user=request.user)
 
     if request.method == "POST":
 
@@ -285,34 +297,35 @@ def availableSlots(request,provider_id):
 
     return render(request,"available_slots.html",{"slots":slots})
 
+
 @login_required
+@require_http_methods(["GET", "POST"])
 def book_detail(request, id):
 
     service = get_object_or_404(Service, id=id)
+
+    print("SERVICE:", service)
+    print("PROVIDER:", service.provider_id)
 
     if request.method == "POST":
 
         selected_date = request.POST.get('date')
         selected_time = request.POST.get('time')
 
-        # ❌ Validation
-        if not selected_date or not selected_time:
-            messages.error(request, "Please select date & time ❌")
-            return redirect(request.path)
-
+        # ✅ Convert string → date/time
         try:
             selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
             selected_time = datetime.strptime(selected_time, "%H:%M").time()
         except:
-            messages.error(request, "Invalid date/time format ❌")
+            messages.error(request, "Invalid date/time ❌")
             return redirect(request.path)
 
-        # ❌ Past date block
+        # ✅ Past date check
         if selected_date < date.today():
-            messages.error(request, "You cannot book past date ❌")
+            messages.error(request, "Past date not allowed ❌")
             return redirect(request.path)
 
-        # 🔍 Find slot
+        # ✅ SLOT MATCH
         slot = Availability.objects.filter(
             provider=service.provider_id,
             date=selected_date,
@@ -320,36 +333,46 @@ def book_detail(request, id):
             is_available=True
         ).first()
 
-        if slot:
+        if not slot:
+            messages.error(request, "Slot not available ❌")
+            return redirect(request.path)
 
-            Booking.objects.create(
-                user=request.user,
-                provider=service.provider_id,
-                service=service,
-                booking_date=selected_date,
-                time_slot=selected_time
-            )
+        # ✅ DOUBLE BOOKING CHECK
+        already_booked = Booking.objects.filter(
+            provider=service.provider_id,
+            booking_date=selected_date,
+            time_slot=selected_time
+        ).exists()
 
-            # 🔒 Slot lock
-            slot.is_available = False
-            slot.save()
+        if already_booked:
+            messages.error(request, "Already booked ❌")
+            return redirect(request.path)
 
-            messages.success(request, "Booking successful 🎉")
+        # ✅ CREATE BOOKING
+        Booking.objects.create(
+            user=request.user,
+            provider=service.provider_id,
+            service=service,
+            booking_date=selected_date,
+            time_slot=selected_time,
+            status="Pending"   
+        )
 
-        else:
-            messages.error(request, "Slot already booked ❌")
+        # ✅ UPDATE SLOT
+        slot.is_available = False
+        slot.save()
 
-        return redirect(request.path)
+        messages.success(request, "Booking successful 🎉")
 
+        return redirect("my_bookings")
+
+    # ✅ GET REQUEST
     return render(request, "service_detail.html", {
         "service": service,
         "today": date.today()
     })
-
-
-# ✅ SLOT API
+# ✅ AJAX SLOT FETCH
 def get_slots_by_date(request):
-
     provider_id = request.GET.get('provider_id')
     selected_date = request.GET.get('date')
 
@@ -364,20 +387,32 @@ def get_slots_by_date(request):
         is_available=True
     ).order_by("start_time")
 
-    data = []
-
-    for slot in slots:
-        data.append({
-            "start": slot.start_time.strftime("%H:%M"),
-            "display": slot.start_time.strftime("%I:%M %p")
-        })
+    data = [
+        {
+            "value": slot.start_time.strftime("%H:%M"),
+            "label": slot.start_time.strftime("%I:%M %p")
+        }
+        for slot in slots
+    ]
 
     return JsonResponse({"slots": data})
 
-
-
+@login_required
 def cancel_booking(request, id):
-    booking = get_object_or_404(Booking, id=id)
-    booking.delete()
-    return redirect('customer_dashboard')
+    booking = get_object_or_404(Booking, id=id, user=request.user)
 
+    slot = Availability.objects.filter(
+        provider=booking.provider_id,
+        date=booking.booking_date,
+        start_time=booking.time_slot
+    ).first()
+
+    if slot:
+        slot.is_available = True
+        slot.save()
+
+    booking.delete()
+
+    messages.success(request, "Booking cancelled ✅")
+
+    return redirect("my_bookings")
