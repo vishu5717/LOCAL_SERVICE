@@ -35,12 +35,12 @@ urlpatterns = [
 
     path("add-service/",views.addService,name="add_service"),
 
-    path("payment/<int:booking_id>/",views.makePayment,name="make_payment"),
+    path("payment/<int:id>/",views.makePayment,name="make_payment"),
 
     path("payment-success/",views.paymentSuccess,name="payment_success"),
 
-    path("payment-details/<int:booking_id>/",views.paymentDetails,name="payment_details"),
+    path("payment-details/<int:id>/",views.paymentDetails,name="payment_details"),
 
     path("add-availability/",views.addAvailability,name="add_availability"),
-
+    path('create-order/', views.create_order, name='create_order'),
 ]

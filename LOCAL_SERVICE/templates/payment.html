@@ -1,23 +1,160 @@
-<h2>💳 Payment</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment</title>
 
-<p><b>Service:</b> {{ booking.service }}</p>
-<p><b>Amount:</b> ₹{{ booking.service.price }}</p>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<form method="POST">
-    {% csrf_token %}
+  <!-- Razorpay -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
 
-    <label><b>Select Payment Method:</b></label><br><br>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
-    <select name="payment_method" required>
-        <option value="">-- Select --</option>
-        <option value="CASH">Cash</option>
-        <option value="CARD">Card</option>
-        <option value="UPI">UPI</option>
-        <option value="NET">Net Banking</option>
-        <option value="WALLET">Wallet</option>
-    </select>
+  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
 
-    <br><br>
+    <!-- ✅ Hidden amount -->
+    <input type="hidden" id="amountValue" value="{{ booking.service.price|default:0 }}">
 
-    <button type="submit">💳 Pay Now</button>
-</form>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+      Secure Payment
+    </h2>
+
+    <!-- ✅ DEBUG (remove later) -->
+    <p class="text-red-500 text-sm text-center mb-2">
+      DEBUG PRICE: {{ booking.service.price }}
+    </p>
+
+    <!-- Order Summary -->
+    <div class="bg-gray-50 p-4 rounded-xl mb-6">
+      <h3 class="text-lg font-semibold text-gray-700 mb-2">Order Summary</h3>
+
+      <div class="flex justify-between text-gray-600">
+        <span>Service</span>
+        <span>{{ booking.service }}</span>
+      </div>
+
+      <div class="flex justify-between text-gray-600">
+        <span>Price</span>
+        <span>₹{{ booking.service.price|default:"0" }}</span>
+      </div>
+
+      <div class="border-t mt-2 pt-2 flex justify-between font-bold text-gray-800">
+        <span>Total</span>
+        <span class="text-green-600">
+          ₹{{ booking.service.price|default:"0" }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ✅ Button with price -->
+    <button id="payBtn"
+      class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition">
+      Pay ₹{{ booking.service.price|default:"0" }}
+    </button>
+
+  </div>
+
+  <script>
+    console.log("✅ JS Loaded");
+
+    const payBtn = document.getElementById('payBtn');
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = cookie.substring(name.length + 1);
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    payBtn.onclick = async function () {
+      console.log("🟢 Button Clicked");
+
+      try {
+        payBtn.innerText = "Processing...";
+        payBtn.disabled = true;
+
+        const csrftoken = getCookie('csrftoken');
+
+        // ✅ Get amount properly
+        const amount = Number(document.getElementById("amountValue").value) || 100;
+
+        console.log("💰 Amount:", amount);
+
+        const response = await fetch('/core/create-order/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          body: JSON.stringify({
+            amount: amount
+          })
+        });
+
+        console.log("📡 Status:", response.status);
+
+        if (!response.ok) {
+          throw new Error("Order creation failed");
+        }
+
+        const data = await response.json();
+        console.log("📦 Order Data:", data);
+
+        if (!data.id) {
+          alert("Order ID not received");
+          return;
+        }
+
+        const options = {
+          key: "rzp_test_SczWViyiRWKiN9",
+          amount: data.amount,
+          currency: "INR",
+          name: "Your Company",
+          description: "Service Payment",
+          order_id: data.id,
+
+          handler: function (response) {
+            alert("✅ Payment Successful!");
+            window.location.href =
+              `/payment-success/?payment_id=${response.razorpay_payment_id}`;
+          },
+
+          prefill: {
+            name: "{{ request.user.username }}",
+            email: "{{ request.user.email }}"
+          },
+
+          theme: {
+            color: "#16a34a"
+          }
+        };
+
+        console.log("🚀 Opening Razorpay...");
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (error) {
+        console.error("❌ ERROR:", error);
+        alert("Something went wrong. Check console.");
+      } finally {
+        payBtn.innerText = "Pay ₹{{ booking.service.price|default:'0' }}";
+        payBtn.disabled = false;
+      }
+    };
+  </script>
+
+</body>
+</html>

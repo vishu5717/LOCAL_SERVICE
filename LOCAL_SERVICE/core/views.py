@@ -12,7 +12,10 @@ from django.core.paginator import Paginator
 from datetime import date ,datetime
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-
+import razorpay
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 # User Signup View
 def userSignupView(request):
@@ -232,10 +235,11 @@ def addReview(request, service_id):
 
     return render(request,"add_review.html",{"service":service})
 
-def makePayment(request, booking_id):
+def makePayment(request, id):
 
     booking = get_object_or_404(Booking, id=id, user=request.user)
-
+    
+    print("PRICE:", booking.service.price)
     if request.method == "POST":
 
         method = request.POST['payment_method']
@@ -355,7 +359,7 @@ def book_detail(request, id):
             service=service,
             booking_date=selected_date,
             time_slot=selected_time,
-            status="Pending"   
+            booking_status="Pending"   
         )
 
         # ✅ UPDATE SLOT
@@ -416,3 +420,41 @@ def cancel_booking(request, id):
     messages.success(request, "Booking cancelled ✅")
 
     return redirect("my_bookings")
+
+client = razorpay.Client(auth=("rzp_test_SczWViyiRWKiN9", "3jwKMh7TsEe2re5vWaVyUuHv"))
+
+@csrf_exempt
+def create_order(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+
+            # ✅ Get amount safely
+            amount = int(data.get('amount', 0))
+            print("AMOUNT RECEIVED:", amount)
+
+            # ✅ Validate amount
+            if amount < 1:
+                return JsonResponse({"error": "Invalid amount"}, status=400)
+
+            # ✅ Convert to paisa
+            amount = amount * 100
+
+            # ✅ Create Razorpay order
+            order = client.order.create({
+                "amount": amount,
+                "currency": "INR",
+                "payment_capture": 1
+            })
+
+            return JsonResponse({
+                "id": order["id"],
+                "amount": order["amount"]
+            })
+
+        except Exception as e:
+            print("ERROR:", str(e))
+            return JsonResponse({"error": str(e)}, status=500)
+
+    # ❌ If not POST
+    return JsonResponse({"error": "Invalid request method"}, status=400)
